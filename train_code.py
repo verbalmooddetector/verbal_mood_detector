@@ -30,37 +30,29 @@ def collect_data(dataset_folder):
         for file in files:
             if file.endswith('.wav'):  # Process only audio files
                 audio_path = os.path.join(root, file)
-                emotion_label = os.path.basename(root)  # Assuming the subfolder name is the emotion label
+                emotion_label = os.path.basename(root)  
 
-                # Convert speech to text
                 text = speech_to_text(audio_path)
-
-                # Append transcribed text and emotion label to data list
+                
                 data.append((text, emotion_label))
     return data
 
 def train_model(data):
-    # Extract texts and labels from the data
     texts = [text for text, _ in data]
     labels = [label for _, label in data]
 
-    # Tokenize the texts
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
 
-    # Pad sequences to ensure uniform length
     max_sequence_length = max(len(seq) for seq in sequences)
     padded_sequences = pad_sequences(sequences, maxlen=max_sequence_length, padding='post')
 
-    # Encode labels
     label_encoder = LabelEncoder()
     encoded_labels = label_encoder.fit_transform(labels)
 
-    # Split the data into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(padded_sequences, encoded_labels, test_size=0.2, random_state=42)
 
-    # Define the LSTM model
     vocab_size = len(tokenizer.word_index) + 1
     embedding_dim = 100
     lstm_units = 128
@@ -74,21 +66,15 @@ def train_model(data):
 
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    # Train the model
     model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=10, batch_size=32)
 
     return model, tokenizer, max_sequence_length
 
-# Path to the dataset folder
 dataset_folder = '/content/drive/MyDrive/Emotion_Audio/Emotion_Audio'
-
-# Collect data from the dataset folder
 data = collect_data(dataset_folder)
 
-# Train the LSTM model using the collected data
 trained_model, tokenizer, max_sequence_length = train_model(data)
 
-# Save the trained model and tokenizer as pickle files
 pickle_file_path = '/content/emotion_detection_model.pkl'
 tokenizer_file_path = '/content/tokenizer.pkl'
 
